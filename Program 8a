@@ -1,0 +1,268 @@
+•	Problem Statement : Word Count program using MapReduce
+
+
+
+Step1:goto Search button run cmd prompt as administrator
+
+Step2: Initiate all required component of  hadoop by command
+
+start-all.cmd
+
+Step3: Create a text file where we have folder running hadoop java program in my case I have created in Desktop
+
+U can create anywhere as u wish
+
+Step4: Create a Directory in HDFS console using command
+
+hadoop fs -mkdir /textformat
+
+Where textform is ur input directory 
+
+Step5: We have to add text into a directory<textformat> in my case b.txt is in desktop folder copy the path and type command 
+
+hadoop fs -put C:\Users\User\Desktop\b.txt  /textformat
+
+After completion of above command u be able to see b.txt in /textformat directory of hdfs console
+
+ 
+
+In cmd prmpt if u want to check type the command as 
+
+hadoop fs -ls /textformat
+
+
+
+Step6: Now we need a jar file to execute mapreduce program fr wordcount
+
+So open Eclipse
+
+Create  a java project with name MapReduceWordCount
+
+Select execution environment as JavaSE-1.8
+
+And click on next&finish
+
+
+
+Step7: Right Click on Projectname--- Click on New---create a package with name com.mapreduce.wc and click on Finish
+
+Step8: Add required libraries to support hadoop by navigating as in below
+
+Right Click on Project-------Right Click on BuildPath------- Configure Buildpath Then goto Libraries as in second screen below
+
+ 
+
+
+
+
+
+ 
+
+Step9: Add necessary External jar file from D:\hadoop\share\hadoop
+
+Like clients,common,hdfs,mapreduce & yarn to support packages for hadoop
+
+ 
+
+
+
+Step10: Create  aclass within package com.mapreduce.wc  with name WordCount and paste this code
+
+package com.mapreduce.wc;
+
+
+
+import java.io.IOException;
+
+import org.apache.hadoop.conf.Configuration;
+
+import org.apache.hadoop.fs.Path;
+
+import org.apache.hadoop.io.IntWritable;
+
+import org.apache.hadoop.io.LongWritable;
+
+import org.apache.hadoop.io.Text;
+
+import org.apache.hadoop.mapreduce.Job;
+
+import org.apache.hadoop.mapreduce.Mapper;
+
+import org.apache.hadoop.mapreduce.Reducer;
+
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+
+import org.apache.hadoop.util.GenericOptionsParser;
+
+
+
+public class WordCount {
+
+
+
+    public static void main(String[] args) throws Exception {
+
+        Configuration c = new Configuration();
+
+        String[] files = new GenericOptionsParser(c, args).getRemainingArgs();
+
+
+
+        // Ensure correct input arguments
+
+        if (files.length < 2) {
+
+            System.err.println("Usage: WordCount <input path> <output path>");
+
+            System.exit(-1);
+
+        }
+
+
+
+        Path input = new Path(files[0]);
+
+        Path output = new Path(files[1]);
+
+
+
+        Job j = Job.getInstance(c, "wordcount");
+
+        j.setJarByClass(WordCount.class);
+
+        j.setMapperClass(MapForWordCount.class);
+
+        j.setReducerClass(ReduceForWordCount.class);
+
+        j.setOutputKeyClass(Text.class);
+
+        j.setOutputValueClass(IntWritable.class);
+
+
+
+        FileInputFormat.addInputPath(j, input);
+
+        FileOutputFormat.setOutputPath(j, output);
+
+
+
+        System.exit(j.waitForCompletion(true) ? 0 : 1);
+
+    }
+
+
+
+    // Mapper Class
+
+    public static class MapForWordCount extends Mapper<LongWritable, Text, Text, IntWritable> {
+
+        private final static IntWritable one = new IntWritable(1);
+
+        private Text wordText = new Text();
+
+
+
+        public void map(LongWritable key, Text value, Context con) throws IOException, InterruptedException {
+
+            String line = value.toString().trim();
+
+            String[] words = line.split("\\s+"); // Handles multiple spaces
+
+
+
+            for (String word : words) {
+
+                if (!word.isEmpty()) { // Avoid empty strings
+
+                    wordText.set(word.trim().toUpperCase());
+
+                    con.write(wordText, one);
+
+                }
+
+            }
+
+        }
+
+    }
+
+
+
+    // Reducer Class
+
+    public static class ReduceForWordCount extends Reducer<Text, IntWritable, Text, IntWritable> {
+
+        public void reduce(Text word, Iterable<IntWritable> values, Context con) throws IOException, InterruptedException {
+
+            int sum = 0;
+
+            for (IntWritable value : values) {
+
+                sum += value.get();
+
+            }
+
+            con.write(word, new IntWritable(sum));
+
+        }
+
+    }
+
+}
+
+
+
+Step11: Procedure to create jar file from eclipse project
+
+Now Right click on Project and click on export and select jar as in screen
+
+ 
+
+Mention the path where u want to save jar with name of Jar File in my case I have saved in D:\hadoopprograms as WordCountMapReduce
+
+
+
+Final step: Run the jar file with command as in below 
+
+hadoop jar  D:\hadoopprograms\WordCountMapReduce.jar com.mapreduce.wc/WordCount /textformat/b.txt /outformat
+
+THE OUTFORMAT WILL BE CREATED IN CONSOLE
+
+ 
+
+
+
+NOW TO CHECK THE RESULT OF WEATHER PROGRAM IS CORRECT TYPE
+
+hadoop fs -cat /outformat/* 
+
+ 
+
+AS YOU CAN SEE HELLO IS 2 in count and WORLD to 1 as my textformat(b.txt) is
+
+ 
+
+
+
+Thank You
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
