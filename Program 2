@@ -1,0 +1,335 @@
+●	Problem Statement : Matrix Multiplication  program using MapReduce
+
+
+
+Step1:goto Search button run cmd prompt as administrator
+
+Step2: Initiate all required component of  hadoop by command
+
+start-all.cmd
+
+Step3: Create a text file where we have folder running hadoop java program in my case I have created in Desktop folder D:\hadoopprograms\matrixm
+
+U can create anywhere as u wish with m.txt and content looks as in below
+
+ 
+
+
+
+
+
+Step3: Now we need a jar file to execute mapreduce program fr wordcount
+
+So open Eclipse
+
+Create  a java project with name MapReduceMatrixMultiplication
+
+Select execution environment as JavaSE-1.8
+
+And click on next&finish
+
+
+
+Step4: Right Click on Projectname---🡪 Click on New---🡪create a package with name com.mapreduce.mm and click on Finish
+
+Step5: Add required libraries to support hadoop by navigating as in below
+
+Right Click on Project-------🡪Right Click on BuildPath-------🡪 Configure Buildpath Then goto Libraries as in screen below
+
+ 
+
+
+
+
+
+Step6: Add necessary External jar file from D:\hadoop\share\hadoop
+
+Like clients,common,hdfs,mapreduce & yarn to support packages for hadoop
+
+ 
+
+
+
+Step7: Create  a class within package com.mapreduce.mm  with name MatrixMultiplication and paste this code
+
+package com.mapreduce.mm;
+
+import java.io.IOException;
+
+import java.util.HashMap;
+
+
+
+import org.apache.hadoop.conf.Configuration;
+
+import org.apache.hadoop.fs.Path;
+
+import org.apache.hadoop.io.Text;
+
+import org.apache.hadoop.mapreduce.*;
+
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+
+
+
+public class MatrixMultiplication {
+
+
+
+    // Mapper Class
+
+    public static class MatrixMapper extends Mapper<Object, Text, Text, Text> {
+
+        public void map(Object key, Text value, Context context)
+
+                throws IOException, InterruptedException {
+
+
+
+            String[] tokens = value.toString().split(",");
+
+            String matrixName = tokens[0]; // M or N
+
+
+
+            int i = Integer.parseInt(tokens[1]);
+
+            int j = Integer.parseInt(tokens[2]);
+
+            float val = Float.parseFloat(tokens[3]);
+
+
+
+            Configuration conf = context.getConfiguration();
+
+            int n = Integer.parseInt(conf.get("n")); // Matrix dimension
+
+
+
+            if (matrixName.equals("M")) {
+
+                // Emit for each column in N
+
+                for (int k = 0; k < n; k++) {
+
+                    context.write(new Text(i + "," + k), new Text("M," + j + "," + val));
+
+                }
+
+            } else {
+
+                // Emit for each row in M
+
+                for (int k = 0; k < n; k++) {
+
+                    context.write(new Text(k + "," + j), new Text("N," + i + "," + val));
+
+                }
+
+            }
+
+        }
+
+    }
+
+
+
+    // Reducer Class
+
+    public static class MatrixReducer extends Reducer<Text, Text, Text, Text> {
+
+        public void reduce(Text key, Iterable<Text> values, Context context)
+
+                throws IOException, InterruptedException {
+
+
+
+            HashMap<Integer, Float> hashA = new HashMap<>();
+
+            HashMap<Integer, Float> hashB = new HashMap<>();
+
+
+
+            for (Text val : values) {
+
+                String[] parts = val.toString().split(",");
+
+                String matrix = parts[0];
+
+                int index = Integer.parseInt(parts[1]);
+
+                float value = Float.parseFloat(parts[2]);
+
+
+
+                if (matrix.equals("M")) {
+
+                    hashA.put(index, value);
+
+                } else {
+
+                    hashB.put(index, value);
+
+                }
+
+            }
+
+
+
+            Configuration conf = context.getConfiguration();
+
+            int n = Integer.parseInt(conf.get("n"));
+
+            float result = 0.0f;
+
+
+
+            for (int k = 0; k < n; k++) {
+
+                float a = hashA.getOrDefault(k, 0.0f);
+
+                float b = hashB.getOrDefault(k, 0.0f);
+
+                result += a * b;
+
+            }
+
+
+
+            if (result != 0.0f) {
+
+                context.write(key, new Text(String.valueOf(result)));
+
+            }
+
+        }
+
+    }
+
+
+
+    // Driver (Main Method)
+
+    public static void main(String[] args) throws Exception {
+
+        Configuration conf = new Configuration();
+
+
+
+        // Set matrix dimension n (number of columns in M or rows in N)
+
+        conf.set("mapreduce.framework.name", "local");
+
+        conf.set("fs.defaultFS", "file:///");
+
+        
+
+        conf.set("n", "3");
+
+
+
+        Job job = Job.getInstance(conf, "Matrix Multiplication");
+
+        job.setJarByClass(MatrixMultiplication.class);
+
+        job.setMapperClass(MatrixMapper.class);
+
+        job.setReducerClass(MatrixReducer.class);
+
+
+
+        job.setMapOutputKeyClass(Text.class);
+
+        job.setMapOutputValueClass(Text.class);
+
+        job.setOutputKeyClass(Text.class);
+
+        job.setOutputValueClass(Text.class);
+
+
+
+        FileInputFormat.setInputPaths(job, new Path(args[0]));
+
+        FileOutputFormat.setOutputPath(job, new Path(args[1]));
+
+
+
+        System.exit(job.waitForCompletion(true) ? 0 : 1);
+
+    }
+
+}
+
+
+
+
+
+Step8: Procedure to create jar file from eclipse project
+
+Now Right click on Project and click on export and select jar as in screen
+
+ 
+
+Mention the path where u want to save jar with name of Jar File in my case I have saved in D:\hadoopprograms as MatrixMultiplication
+
+
+
+Final step: Run the jar file with command as in below 
+
+hadoop jar D:\hadoopprograms\MatrixMultiplication.jar com.mapreduce.mm.MatrixMultiplication D:/hadoopprograms/matrixm/m.txt D:/hadoopprograms/matrixm/matrixoutput1
+
+
+
+After execution in command the output looks as in below screens
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+THE OUTFORMAT WILL BE CREATED THIS TIME IN LOCALFOLDER WHERE MENTIONED
+
+----🡪 D:\hadoopprograms\matrixm\matrixoutput1
+
+In part-r-00000 text file
+
+ 
+
+
+
+NOW TO CHECK THE RESULT OF A PROGRAM 
+
+Thank You
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+7
